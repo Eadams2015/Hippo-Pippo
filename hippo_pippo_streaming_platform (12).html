@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hippo Pippo - Watch Movies & Trailers</title>
+  <!-- Tailwind CSS CDN (Works in Safari & all web browsers) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #0d0914;
+      color: #ffffff;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .transition-all {
+      -webkit-transition: all 0.3s ease;
+      transition: all 0.3s ease;
+    }
+    .purple-glow {
+      box-shadow: 0 0 25px rgba(147, 51, 234, 0.3);
+    }
+    /* Background with subtle hippo plush silhouette pattern */
+    .hippo-bg-overlay {
+      background-image: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.15), transparent 70%),
+                        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100' opacity='0.03'%3E%3Cpath fill='%3C%23d8b4fe' d='M30 40 c-10 0 -15 10 -15 20 c0 15 10 25 35 25 c25 0 35 -10 35 -25 c0 -10 -5 -20 -15 -20 c-5 -10 -15 -12 -20 -12 c-5 0 -15 2 -20 12 z M 25 35 a 6 6 0 1 1 0 -12 a 6 6 0 0 1 0 12 M 75 35 a 6 6 0 1 1 0 -12 a 6 6 0 0 1 0 12'/%3E%3C/svg%3E");
+    }
+  </style>
+</head>
+<body class="selection:bg-purple-600 selection:text-white bg-[#0d0914] min-h-screen hippo-bg-overlay">
+
+  <!-- ================= HEADER / NAVBAR ================= -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-40 transition-colors duration-300 flex items-center justify-between px-4 md:px-12 py-4 bg-gradient-to-b from-purple-950/90 via-[#0d0914]/70 to-transparent border-b border-purple-900/30">
+    <!-- Brand Logo -->
+    <div class="flex items-center gap-6 md:gap-8">
+      <div class="cursor-pointer" onclick="clearSearch()">
+        <span class="text-2xl md:text-3xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-red-500 to-emerald-400 uppercase font-black drop-shadow-md">
+          HIPPO PIPPO
+        </span>
+        <div class="text-[9px] tracking-widest text-emerald-400 font-mono -mt-1">HippoPippo.com</div>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="hidden md:flex items-center gap-5 text-sm text-gray-300">
+        <a href="#" onclick="clearSearch()" class="hover:text-emerald-400 transition font-medium">Home</a>
+        <a href="#" class="hover:text-purple-400 transition font-medium">TV Shows</a>
+        <a href="#" class="hover:text-red-400 transition font-medium">Movies</a>
+        <a href="#" class="hover:text-emerald-400 transition font-medium">New & Popular</a>
+        <a href="#" id="myListNavBtn" onclick="filterMyList()" class="hover:text-purple-400 transition hidden font-medium">My List (<span id="myListCount">0</span>)</a>
+      </div>
+    </div>
+
+    <!-- Search & Auth Actions -->
+    <div class="flex items-center gap-3 md:gap-4">
+      <!-- Search Input -->
+      <div class="relative flex items-center">
+        <i class="fa-solid fa-magnifying-glass text-purple-400 absolute left-3 text-xs"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Titles, genres..." 
+          oninput="handleSearch(this.value)"
+          class="bg-black/70 text-white pl-9 pr-8 py-1.5 rounded-full text-xs md:text-sm border border-purple-800/60 focus:outline-none focus:border-emerald-400 w-28 sm:w-36 md:w-56 transition-all"
+        />
+        <i id="clearSearchBtn" onclick="clearSearch()" class="fa-solid fa-xmark text-gray-400 absolute right-3 text-xs cursor-pointer hover:text-white hidden"></i>
+      </div>
+
+      <!-- Admin Actions (Only visible when logged in as Admin 'Eadams') -->
+      <div id="adminControls" class="hidden flex items-center gap-2">
+        <button onclick="openModal('adminUsersModal')" class="bg-purple-950/90 hover:bg-purple-900 border border-purple-500 text-purple-200 text-xs px-2.5 py-1.5 rounded flex items-center gap-1.5 font-medium shadow-md">
+          <i class="fa-solid fa-users text-emerald-400"></i> <span class="hidden sm:inline">Users DB</span>
+        </button>
+        <button onclick="openModal('adminAddVideoModal')" class="bg-gradient-to-r from-red-600 via-purple-600 to-emerald-600 hover:opacity-90 text-white text-xs px-3 py-1.5 rounded flex items-center gap-1.5 font-bold shadow-md">
+          <i class="fa-solid fa-plus"></i> <span>Upload</span>
+        </button>
+      </div>
+
+      <!-- Admin portal button (Only shown when NO ONE is logged in) -->
+      <button id="adminPortalBtn" onclick="openModal('adminLoginModal')" class="text-xs text-purple-400 hover:text-emerald-400 underline hidden sm:inline-block">
+        Admin
+      </button>
+
+      <!-- Auth State Button / User Badge -->
+      <div id="userBadge" class="hidden flex items-center gap-2 bg-purple-950/50 px-2.5 py-1 rounded border border-purple-800">
+        <div id="userAvatar" class="w-6 h-6 rounded bg-gradient-to-br from-red-500 to-emerald-500 flex items-center justify-center font-bold text-xs uppercase text-white shadow">U</div>
+        <span id="userEmailSpan" class="text-xs text-gray-200 max-w-[100px] truncate hidden sm:inline">user@example.com</span>
+        <button onclick="logout()" title="Log Out" class="text-purple-300 hover:text-red-400 transition ml-1">
+          <i class="fa-solid fa-right-from-bracket text-xs"></i>
+        </button>
+      </div>
+
+      <button id="signInBtn" onclick="openModal('authModal')" class="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white px-4 py-1.5 rounded text-xs md:text-sm font-bold shadow-lg">
+        Sign In
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= HERO BANNER ================= -->
+  <div id="heroSection" class="relative h-[70vh] md:h-[82vh] w-full bg-cover bg-center transition-all duration-500">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#0d0914] via-[#0d0914]/50 to-purple-950/40"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-[#0d0914] via-[#0d0914]/60 to-transparent"></div>
+    
+    <div class="absolute bottom-12 md:bottom-20 left-4 md:left-12 max-w-xl z-10 space-y-3">
+      <div class="flex items-center gap-2">
+        <span class="bg-gradient-to-r from-red-600 to-purple-600 text-white font-black text-[10px] px-2.5 py-0.5 rounded tracking-widest uppercase shadow">HIPPO PIPPO ORIGINAL</span>
+        <span id="heroMatch" class="text-emerald-400 text-xs font-bold border border-emerald-500/40 bg-emerald-950/50 px-2 py-0.5 rounded">98% Match</span>
+        <span id="heroRating" class="text-xs text-purple-200 border border-purple-500/50 px-1.5 py-0.5 rounded">PG-13</span>
+      </div>
+      
+      <h1 id="heroTitle" class="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight drop-shadow-md text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-100 to-emerald-200">The Hippo of Shady Lane</h1>
+      <p id="heroDesc" class="text-xs sm:text-sm md:text-base text-gray-300 line-clamp-3 drop-shadow">An iconic story set in deep wetlands following the journey of Pippo as he explores forgotten wild realms.</p>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button id="heroPlayBtn" onclick="playHeroMovie()" class="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-black px-5 py-2 md:px-6 md:py-2.5 rounded font-black flex items-center gap-2 text-sm md:text-base shadow-lg shadow-emerald-950/50">
+          <i class="fa-solid fa-play"></i> Play Video
+        </button>
+        <button id="heroListBtn" onclick="toggleHeroMyList()" class="bg-purple-900/60 hover:bg-purple-900/80 text-purple-100 border border-purple-600 px-4 py-2 md:px-5 md:py-2.5 rounded font-semibold flex items-center gap-2 text-sm md:text-base backdrop-blur">
+          <i class="fa-solid fa-plus text-emerald-400"></i> My List
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CATALOG CONTENT ROWS ================= -->
+  <div id="catalogContainer" class="px-4 md:px-12 space-y-10 pb-20 -mt-16 relative z-20">
+    <!-- Dynamic Category Rows Generated by JS -->
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-purple-900/40 bg-black/80 px-4 md:px-12 py-10 text-gray-400 text-xs">
+    <div class="max-w-5xl mx-auto space-y-4">
+      <div class="flex items-center gap-2 text-gray-300 font-bold text-sm">
+        <span class="text-purple-400">HIPPO PIPPO</span>
+        <span class="text-red-500">•</span>
+        <span class="text-emerald-400">HippoPippo.com</span>
+      </div>
+      <p class="text-purple-300/80">Purple, Red & Green Themed Multi-Browser Streaming Platform. Native persistent IndexedDB video storage enabled.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 text-purple-200/70">
+        <span class="hover:text-emerald-400 cursor-pointer transition">FAQ</span>
+        <span class="hover:text-red-400 cursor-pointer transition">Help Center</span>
+        <span class="hover:text-purple-400 cursor-pointer transition">Terms of Use</span>
+        <span class="hover:text-emerald-400 cursor-pointer transition">Privacy</span>
+        <span class="hover:text-red-400 cursor-pointer transition">Cookie Preferences</span>
+        <span class="hover:text-purple-400 cursor-pointer transition">Browser Compatibility</span>
+      </div>
+      <p class="text-gray-500">© 2026 Hippo Pippo Inc. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. AUTH MODAL -->
+  <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+    <div class="bg-[#120a1c] border border-purple-600/50 p-6 md:p-8 rounded-xl max-w-md w-full relative shadow-2xl purple-glow">
+      <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-400 transition">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h2 id="authTitle" class="text-2xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-300 to-emerald-400">Sign In to Hippo Pippo</h2>
+
+      <div id="verificationNotice" class="hidden bg-emerald-950/90 border border-emerald-500 text-emerald-300 text-xs p-3 rounded-lg mb-4 flex items-start gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
+        <span>A verification email has been sent to your address. You can access your account immediately.</span>
+      </div>
+
+      <div id="authError" class="hidden bg-red-950/90 border border-red-500 text-red-300 text-xs p-3 rounded-lg mb-4"></div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Email or Username</label>
+          <input type="text" id="authEmail" required placeholder="name@example.com" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Password</label>
+          <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="rememberMe" checked class="accent-purple-600 rounded">
+            <span class="text-purple-200">Remember Me</span>
+          </label>
+          <button type="button" onclick="switchToForgot()" class="text-emerald-400 hover:underline">Forgot password?</button>
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full bg-gradient-to-r from-red-600 via-purple-600 to-emerald-600 hover:opacity-90 text-white font-bold py-2.5 rounded-lg transition shadow-lg mt-2">
+          Sign In
+        </button>
+      </form>
+
+      <div class="mt-6 flex flex-col gap-2 text-xs text-gray-400 border-t border-purple-900/50 pt-4">
+        <button id="toggleAuthModeBtn" onclick="toggleAuthMode()" class="text-emerald-400 hover:underline font-medium text-left">
+          New to Hippo Pippo? Sign up now.
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. FORGOT PASSWORD MODAL -->
+  <div id="forgotModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+    <div class="bg-[#120a1c] border border-purple-600/50 p-6 md:p-8 rounded-xl max-w-md w-full relative shadow-2xl purple-glow">
+      <button onclick="closeModal('forgotModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-400">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h2 class="text-2xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-purple-300 to-red-500">Forgot Password</h2>
+      <p class="text-xs text-purple-300/80 mb-6">Account recovery portal for HippoPippo.com users.</p>
+
+      <div id="forgotError" class="hidden bg-red-950/90 border border-red-500 text-red-300 text-xs p-3 rounded-lg mb-4"></div>
+      <div id="forgotNotice" class="hidden bg-emerald-950/90 border border-emerald-500 text-emerald-300 text-xs p-3 rounded-lg mb-4"></div>
+
+      <form id="forgotStep1" onsubmit="handleSendResetCode(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Enter your account email</label>
+          <input type="email" id="forgotEmail" required placeholder="your-email@domain.com" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-red-600 hover:opacity-90 text-white font-bold py-2 rounded-lg text-sm transition shadow-lg">
+          Send Reset Code
+        </button>
+      </form>
+
+      <form id="forgotStep2" onsubmit="handleVerifyCodeAndReset(event)" class="space-y-4 hidden">
+        <div class="bg-[#0b0512] border border-purple-700/60 p-3 rounded-lg text-xs space-y-1">
+          <div class="text-purple-300 font-semibold">Simulated Inbox Notification:</div>
+          <div class="text-red-400 font-mono">From: eadams202015@icloud.com</div>
+          <div id="inboxTo" class="text-gray-300">To: </div>
+          <div class="text-emerald-400 font-mono font-bold pt-1">
+            Verification Code: <span id="simulatedCode" class="bg-black px-2 py-0.5 rounded text-emerald-300 border border-emerald-500/50 tracking-widest">######</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Enter Code Received</label>
+          <input type="text" id="inputResetCode" required placeholder="6-digit code" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400 font-mono tracking-widest">
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Set New Password</label>
+          <input type="password" id="inputNewPassword" required placeholder="••••••••" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-purple-600 hover:opacity-90 text-white font-bold py-2 rounded-lg text-sm transition shadow-lg">
+          Update & Unlock Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. ADMIN LOGIN MODAL -->
+  <div id="adminLoginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+    <div class="bg-[#120a1c] border border-red-600/60 p-6 md:p-8 rounded-xl max-w-md w-full relative shadow-2xl purple-glow">
+      <button onclick="closeModal('adminLoginModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-400">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center gap-2 mb-2">
+        <i class="fa-solid fa-user-shield text-xl text-red-500"></i>
+        <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-purple-300 to-emerald-400">Admin Authentication</h2>
+      </div>
+      <p class="text-xs text-purple-300/80 mb-6">Restricted portal for Hippo Pippo content creator.</p>
+
+      <div id="adminLoginError" class="hidden bg-red-950/90 border border-red-500 text-red-300 text-xs p-3 rounded-lg mb-4"></div>
+
+      <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Admin Username</label>
+          <input type="text" id="adminUser" required placeholder="Eadams" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-red-500">
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Admin Password</label>
+          <input type="password" id="adminPass" required placeholder="Floof2020" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-red-500">
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:opacity-90 text-white font-bold py-2.5 rounded-lg transition shadow-lg">
+          Log In as Admin
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. ADMIN USERS DATABASE MODAL -->
+  <div id="adminUsersModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+    <div class="bg-[#120a1c] border border-purple-600/60 p-6 rounded-xl max-w-2xl w-full relative shadow-2xl max-h-[85vh] flex flex-col purple-glow">
+      <button onclick="closeModal('adminUsersModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-400">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h2 class="text-xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-emerald-400 to-red-400">Registered Accounts Database</h2>
+      <p class="text-xs text-purple-300/80 mb-4">View all registered accounts (Creator Admin View Only).</p>
+
+      <div class="overflow-x-auto flex-1 rounded-lg border border-purple-900/60 bg-[#0b0512]">
+        <table class="w-full text-left text-xs text-gray-300">
+          <thead class="bg-purple-950/80 text-purple-200 uppercase text-[10px] tracking-wider border-b border-purple-800/80">
+            <tr>
+              <th class="p-3">User ID</th>
+              <th class="p-3">Email / Username</th>
+              <th class="p-3">Password</th>
+              <th class="p-3">Role</th>
+              <th class="p-3">Joined</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTableBody" class="divide-y divide-purple-950/60 font-mono">
+            <!-- Dynamic Users -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. ADMIN ADD VIDEO MODAL -->
+  <div id="adminAddVideoModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 hidden">
+    <div class="bg-[#120a1c] border border-emerald-600/50 p-6 rounded-xl max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto purple-glow">
+      <button onclick="closeModal('adminAddVideoModal')" class="absolute top-4 right-4 text-gray-400 hover:text-red-400">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <h2 class="text-xl font-bold mb-1 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-purple-300 to-red-500">Upload New Film or Trailer</h2>
+      <p class="text-xs text-purple-300/80 mb-4">Import video files from your device to save them permanently across tabs & browser restarts.</p>
+
+      <div id="addVideoError" class="hidden bg-red-950/90 border border-red-500 text-red-300 text-xs p-3 rounded-lg mb-4"></div>
+
+      <form onsubmit="handleAddVideoSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Film Title *</label>
+          <input type="text" id="videoTitle" required placeholder="e.g. Hippo in the Wild" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Category</label>
+          <select id="videoCategory" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400">
+            <option value="Trending Now">Trending Now</option>
+            <option value="Action & Thrillers">Action & Thrillers</option>
+            <option value="Nature & Wildlife">Nature & Wildlife</option>
+            <option value="Comedies">Comedies</option>
+          </select>
+        </div>
+
+        <!-- VIDEO FILE SOURCE SELECTOR -->
+        <div class="bg-[#0b0512] border border-purple-900/60 p-3 rounded-lg space-y-3">
+          <label class="block text-xs font-bold text-emerald-400">Video Source</label>
+          <div>
+            <label class="block text-[11px] text-purple-300 mb-1"><i class="fa-solid fa-file-video text-red-500 mr-1"></i> Import Video File from Device (IndexedDB Permanent)</label>
+            <input type="file" id="videoFileInput" accept="video/*" class="w-full text-xs text-gray-300 bg-[#1b1029] rounded-lg p-2 border border-purple-800">
+          </div>
+          <div class="text-center text-[10px] text-purple-400 font-bold uppercase">- OR -</div>
+          <div>
+            <label class="block text-[11px] text-purple-300 mb-1">Video Stream Web URL</label>
+            <input type="url" id="videoUrlInput" placeholder="https://example.com/video.mp4" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-emerald-400">
+          </div>
+        </div>
+
+        <!-- THUMBNAIL SOURCE SELECTOR -->
+        <div class="bg-[#0b0512] border border-purple-900/60 p-3 rounded-lg space-y-3">
+          <label class="block text-xs font-bold text-purple-300">Poster / Cover Image</label>
+          <div>
+            <label class="block text-[11px] text-purple-300 mb-1"><i class="fa-solid fa-image text-emerald-400 mr-1"></i> Import Image File from Device</label>
+            <input type="file" id="thumbFileInput" accept="image/*" class="w-full text-xs text-gray-300 bg-[#1b1029] rounded-lg p-2 border border-purple-800">
+          </div>
+          <div class="text-center text-[10px] text-purple-400 font-bold uppercase">- OR -</div>
+          <div>
+            <label class="block text-[11px] text-purple-300 mb-1">Image Web URL</label>
+            <input type="url" id="thumbUrlInput" placeholder="https://example.com/poster.jpg" class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-emerald-400">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-purple-300 mb-1">Description</label>
+          <textarea id="videoDesc" rows="3" placeholder="Enter video overview..." class="w-full bg-[#1b1029] border border-purple-800 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-emerald-400"></textarea>
+        </div>
+
+        <button type="submit" id="saveVideoBtn" class="w-full bg-gradient-to-r from-emerald-600 via-purple-600 to-red-600 hover:opacity-90 text-white font-bold py-2.5 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Save & Store Video
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. VIDEO PLAYER OVERLAY MODAL -->
+  <div id="playerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-2 sm:p-4 hidden">
+    <div class="bg-[#120a1c] border border-purple-800 rounded-xl max-w-4xl w-full overflow-hidden relative shadow-2xl flex flex-col max-h-[95vh] purple-glow">
+      <button onclick="closeModal('playerModal')" class="absolute top-3 right-3 z-30 text-white bg-black/70 hover:bg-red-600 rounded-full w-8 h-8 flex items-center justify-center transition">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="relative aspect-video w-full bg-black flex items-center justify-center">
+        <!-- Native HTML5 Video Element -->
+        <video 
+          id="mainVideoPlayer" 
+          controls 
+          playsinline 
+          webkit-playsinline 
+          autoplay
+          class="w-full h-full object-contain"
+        >
+          Your browser does not support HTML5 video playback.
+        </video>
+      </div>
+
+      <div class="p-4 md:p-6 space-y-2 overflow-y-auto">
+        <div class="flex items-center justify-between">
+          <h2 id="playerMovieTitle" class="text-xl md:text-2xl font-bold text-white">Title</h2>
+          <span id="playerMovieCategory" class="text-xs bg-purple-950 border border-purple-600 text-emerald-400 px-2.5 py-0.5 rounded-full font-mono font-semibold">Category</span>
+        </div>
+        <p id="playerMovieDesc" class="text-xs md:text-sm text-purple-200/90 leading-relaxed">Description...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT APP LOGIC ================= -->
+  <script>
+    // --- INDEXEDDB STORAGE ENGINE ---
+    const DB_NAME = 'hippo_media_db';
+    const STORE_NAME = 'media_files';
+
+    // Broadcast channel for real-time synchronization across all open tabs & users
+    const syncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('hippo_catalog_sync') : null;
+
+    if (syncChannel) {
+      syncChannel.onmessage = async (event) => {
+        if (event.data && (event.data.type === 'CATALOG_UPDATED' || event.data.type === 'FULL_SYNC_REQUEST')) {
+          await syncCatalogAndStorage();
+        }
+      };
+    }
+
+    // Fallback sync using standard storage event for browsers without BroadcastChannel
+    window.addEventListener('storage', async (e) => {
+      if (e.key === 'hippo_movies' || e.key === 'hippo_users_db') {
+        await syncCatalogAndStorage();
+      }
+    });
+
+    async function syncCatalogAndStorage() {
+      const storedMovies = JSON.parse(localStorage.getItem('hippo_movies'));
+      if (storedMovies && Array.isArray(storedMovies)) {
+        movies = storedMovies;
+      } else {
+        movies = INITIAL_MOVIES;
+      }
+      await rehydrateMediaBlobs();
+      renderHero();
+      renderCatalog();
+    }
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => reject(e);
+      });
+    }
+
+    async function saveMediaBlob(key, blob) {
+      try {
+        const db = await initDB();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).put(blob, key);
+        return new Promise((resolve) => {
+          tx.oncomplete = () => resolve(true);
+        });
+      } catch (err) {
+        console.error('IndexedDB Save Error:', err);
+        return false;
+      }
+    }
+
+    async function getMediaBlob(key) {
+      try {
+        const db = await initDB();
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const req = tx.objectStore(STORE_NAME).get(key);
+        return new Promise((resolve) => {
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        });
+      } catch (err) {
+        console.error('IndexedDB Read Error:', err);
+        return null;
+      }
+    }
+
+    // SVG Placeholder Thumbnail Generator featuring the Soft Lavender Plush Hippo
+    function createSvgThumbnail(title) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="350" viewBox="0 0 600 350">
+        <defs>
+          <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#190d2e"/>
+            <stop offset="50%" stop-color="#3b0764"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+        </defs>
+        <rect width="600" height="350" fill="url(#bg)"/>
+        <!-- Soft Lavender Plush Hippo Character -->
+        <g transform="translate(180, 20)">
+          <!-- Body -->
+          <ellipse cx="120" cy="130" rx="90" ry="55" fill="#d8b4fe" opacity="0.9"/>
+          <!-- Back legs / feet -->
+          <ellipse cx="40" cy="155" rx="35" ry="20" fill="#c084fc"/>
+          <ellipse cx="200" cy="155" rx="35" ry="20" fill="#c084fc"/>
+          <!-- Head -->
+          <circle cx="120" cy="85" r="45" fill="#e9d5ff"/>
+          <!-- Snout / Muzzle -->
+          <ellipse cx="120" cy="100" rx="40" ry="28" fill="#f3e8ff"/>
+          <circle cx="108" cy="95" r="4" fill="#a855f7"/>
+          <circle cx="132" cy="95" r="4" fill="#a855f7"/>
+          <!-- Ears -->
+          <circle cx="90" cy="50" r="12" fill="#d8b4fe"/>
+          <circle cx="150" cy="50" r="12" fill="#d8b4fe"/>
+          <!-- Eyes -->
+          <circle cx="102" cy="72" r="5" fill="#1e1b4b"/>
+          <circle cx="138" cy="72" r="5" fill="#1e1b4b"/>
+          <circle cx="104" cy="70" r="1.5" fill="#ffffff"/>
+          <circle cx="140" cy="70" r="1.5" fill="#ffffff"/>
+        </g>
+        <text x="300" y="255" fill="#34d399" font-size="24" font-family="sans-serif" font-weight="bold" text-anchor="middle">${title.replace(/'/g, "")}</text>
+        <text x="300" y="285" fill="#e9d5ff" font-size="14" font-family="sans-serif" text-anchor="middle">HippoPippo.com Original</text>
+      </svg>`;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    // Default Catalog Data
+    const INITIAL_MOVIES = [
+      {
+        id: 'm1',
+        title: 'The Hippo of Shady Lane',
+        description: 'An iconic story set in deep wetlands following the journey of Pippo as he explores forgotten wild realms.',
+        category: 'Trending Now',
+        genre: 'Documentary',
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
+        duration: '2h 14m',
+        rating: 'PG-13',
+        match: '99% Match'
+      },
+      {
+        id: 'm2',
+        title: 'Pippo: Cyber Sentinel',
+        description: 'In a dystopian neon city, a hero rises to combat corporate control across digital frontiers.',
+        category: 'Action & Thrillers',
+        genre: 'Sci-Fi',
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80',
+        duration: '1h 52m',
+        rating: 'R',
+        match: '95% Match'
+      },
+      {
+        id: 'm3',
+        title: 'Echoes of the River',
+        description: 'A serene journey following majestic freshwater animals across undisturbed aquatic ecosystems.',
+        category: 'Nature & Wildlife',
+        genre: 'Nature',
+        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=800&q=80',
+        duration: '1h 38m',
+        rating: 'G',
+        match: '98% Match'
+      }
+    ];
+
+    // --- APP STATE ---
+    let currentUser = JSON.parse(localStorage.getItem('hippo_current_user')) || null;
+    let usersDb = JSON.parse(localStorage.getItem('hippo_users_db')) || [
+      { id: 'u1', email: 'user@example.com', password: 'password123', role: 'user', createdAt: '2024-01-15' },
+      { id: 'u_admin', email: 'Eadams', password: 'Floof2020', role: 'admin', createdAt: '2024-01-01' }
+    ];
+    let movies = JSON.parse(localStorage.getItem('hippo_movies')) || INITIAL_MOVIES;
+    let myList = [];
+    let isSignUpMode = false;
+    let generatedResetCode = '';
+    let currentForgotEmail = '';
+
+    // --- REHYDRATE MEDIA BLOBS ON LOAD ---
+    async function rehydrateMediaBlobs() {
+      for (let i = 0; i < movies.length; i++) {
+        const item = movies[i];
+        if (item.videoBlobKey) {
+          const blob = await getMediaBlob(item.videoBlobKey);
+          if (blob) {
+            item.videoUrl = URL.createObjectURL(blob);
+          }
+        }
+        if (item.thumbBlobKey) {
+          const blob = await getMediaBlob(item.thumbBlobKey);
+          if (blob) {
+            item.thumbnail = URL.createObjectURL(blob);
+          }
+        }
+      }
+      renderHero();
+      renderCatalog();
+    }
+
+    function notifyCatalogUpdate() {
+      const cleanMovies = movies.map(m => ({
+        ...m,
+        videoUrl: m.videoBlobKey ? '' : m.videoUrl,
+        thumbnail: m.thumbBlobKey ? '' : m.thumbnail
+      }));
+      localStorage.setItem('hippo_movies', JSON.stringify(cleanMovies));
+      if (syncChannel) {
+        syncChannel.postMessage({ type: 'CATALOG_UPDATED' });
+      }
+    }
+
+    function saveMoviesToStorage() {
+      notifyCatalogUpdate();
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = async function() {
+      await syncCatalogAndStorage();
+      renderNavbar();
+      setupScrollListener();
+    };
+
+    function setupScrollListener() {
+      const navbar = document.getElementById('navbar');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+          navbar.classList.add('bg-[#0d0914]/95', 'shadow-lg');
+          navbar.classList.remove('bg-gradient-to-b');
+        } else {
+          navbar.classList.remove('bg-[#0d0914]/95', 'shadow-lg');
+          navbar.classList.add('bg-gradient-to-b');
+        }
+      });
+    }
+
+    // --- UI RENDERING ---
+    function renderNavbar() {
+      const signInBtn = document.getElementById('signInBtn');
+      const userBadge = document.getElementById('userBadge');
+      const adminControls = document.getElementById('adminControls');
+      const adminPortalBtn = document.getElementById('adminPortalBtn');
+
+      const isAdmin = currentUser && (currentUser.email === 'Eadams' || currentUser.role === 'admin');
+
+      if (currentUser) {
+        signInBtn.classList.add('hidden');
+        userBadge.classList.remove('hidden');
+        document.getElementById('userAvatar').innerText = currentUser.email.charAt(0).toUpperCase();
+        document.getElementById('userEmailSpan').innerText = currentUser.email;
+
+        // Hide "Admin" text link whenever ANY user is logged in
+        adminPortalBtn.classList.add('hidden');
+
+        if (isAdmin) {
+          adminControls.classList.remove('hidden');
+        } else {
+          // Non-admin user logged in: Hide all admin controls & DB options completely
+          adminControls.classList.add('hidden');
+        }
+      } else {
+        // No user logged in: show Sign In and the Admin portal shortcut
+        signInBtn.classList.remove('hidden');
+        userBadge.classList.add('hidden');
+        adminControls.classList.add('hidden');
+        adminPortalBtn.classList.remove('hidden');
+      }
+    }
+
+    function renderHero() {
+      const hero = movies[0] || INITIAL_MOVIES[0];
+      const heroSection = document.getElementById('heroSection');
+      
+      // Default to plush hippo vector hero if no custom thumbnail image exists
+      const fallbackHero = createSvgThumbnail(hero.title);
+      heroSection.style.backgroundImage = `url('${hero.thumbnail || fallbackHero}')`;
+
+      document.getElementById('heroTitle').innerText = hero.title;
+      document.getElementById('heroDesc').innerText = hero.description;
+      document.getElementById('heroMatch').innerText = hero.match || '98% Match';
+      document.getElementById('heroRating').innerText = hero.rating || 'PG-13';
+    }
+
+    function playHeroMovie() {
+      const hero = movies[0] || INITIAL_MOVIES[0];
+      playMovie(hero.id);
+    }
+
+    function toggleHeroMyList() {
+      const hero = movies[0] || INITIAL_MOVIES[0];
+      toggleMyList(hero.id);
+    }
+
+    function renderCatalog() {
+      const container = document.getElementById('catalogContainer');
+      const categories = ['Trending Now', 'Action & Thrillers', 'Nature & Wildlife', 'Comedies'];
+      
+      let html = '';
+      categories.forEach(cat => {
+        const catMovies = movies.filter(m => m.category === cat || (!m.category && cat === 'Trending Now'));
+        if (catMovies.length > 0) {
+          html += `
+            <div class="space-y-3">
+              <h2 class="text-base sm:text-lg md:text-xl font-bold flex items-center gap-2">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-emerald-400 to-red-400">${cat}</span>
+                <i class="fa-solid fa-chevron-right text-xs text-emerald-400"></i>
+              </h2>
+              <div class="flex gap-4 overflow-x-auto no-scrollbar py-2">
+                ${catMovies.map(movie => createMovieCardHTML(movie)).join('')}
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = html;
+    }
+
+    function createMovieCardHTML(movie) {
+      const fallbackUrl = createSvgThumbnail(movie.title);
+      const thumbUrl = movie.thumbnail || fallbackUrl;
+      const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.email === 'Eadams');
+
+      return `
+        <div class="min-w-[180px] sm:min-w-[220px] md:min-w-[250px] relative group rounded-xl bg-[#170e24] border border-purple-900/40 cursor-pointer overflow-hidden transition-all duration-300 hover:scale-105 shadow-md flex-shrink-0 hover:border-emerald-500/60" onclick="playMovie('${movie.id}')">
+          <img src="${thumbUrl}" alt="${movie.title}" onerror="this.src='${fallbackUrl}'" class="w-full h-32 sm:h-36 md:h-40 object-cover" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0d0914] via-[#0d0914]/30 to-transparent p-3 flex flex-col justify-end">
+            <div class="text-[10px] text-emerald-400 font-bold">${movie.match || '95% Match'}</div>
+            <h3 class="font-bold text-xs md:text-sm text-purple-100 truncate">${movie.title}</h3>
+          </div>
+          ${isAdmin ? `
+            <button onclick="event.stopPropagation(); deleteMovie('${movie.id}')" class="absolute top-2 right-2 bg-red-600/90 hover:bg-red-700 text-white text-[10px] px-2 py-1 rounded-md shadow">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    // --- MODAL MANAGEMENT ---
+    function openModal(id) {
+      const isAdmin = currentUser && (currentUser.email === 'Eadams' || currentUser.role === 'admin');
+      
+      // Guard against non-admin users attempting to open admin modals
+      if ((id === 'adminUsersModal' || id === 'adminAddVideoModal') && !isAdmin) {
+        return;
+      }
+      
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'adminUsersModal') renderUsersTable();
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      if (id === 'playerModal') {
+        const video = document.getElementById('mainVideoPlayer');
+        video.pause();
+        video.src = '';
+      }
+    }
+
+    // --- SEARCH ---
+    function handleSearch(query) {
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const catalog = document.getElementById('catalogContainer');
+      const hero = document.getElementById('heroSection');
+
+      if (query.trim()) {
+        clearBtn.classList.remove('hidden');
+        hero.classList.add('hidden');
+        
+        const filtered = movies.filter(m => m.title.toLowerCase().includes(query.toLowerCase()) || (m.genre && m.genre.toLowerCase().includes(query.toLowerCase())));
+        catalog.classList.remove('-mt-16');
+        catalog.classList.add('pt-24');
+
+        if (filtered.length === 0) {
+          catalog.innerHTML = `<div class="text-center text-purple-300 py-12">No movies found matching "${query}"</div>`;
+        } else {
+          catalog.innerHTML = `
+            <h2 class="text-xl font-bold mb-4 text-purple-200">Search Results</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              ${filtered.map(m => createMovieCardHTML(m)).join('')}
+            </div>
+          `;
+        }
+      } else {
+        clearSearch();
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      const catalog = document.getElementById('catalogContainer');
+      catalog.classList.add('-mt-16');
+      catalog.classList.remove('pt-24');
+      document.getElementById('heroSection').classList.remove('hidden');
+      renderCatalog();
+    }
+
+    // --- AUTH & USER MANAGEMENT ---
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      document.getElementById('authTitle').innerText = isSignUpMode ? 'Create Account' : 'Sign In to Hippo Pippo';
+      document.getElementById('authSubmitBtn').innerText = isSignUpMode ? 'Create Account' : 'Sign In';
+      document.getElementById('toggleAuthModeBtn').innerText = isSignUpMode ? 'Already have an account? Sign in.' : 'New to Hippo Pippo? Sign up now.';
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const authError = document.getElementById('authError');
+      const notice = document.getElementById('verificationNotice');
+
+      authError.classList.add('hidden');
+
+      if (isSignUpMode) {
+        if (usersDb.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+          authError.innerText = 'An account with this email already exists.';
+          authError.classList.remove('hidden');
+          return;
+        }
+
+        const newUser = {
+          id: 'u_' + Date.now(),
+          email,
+          password,
+          role: 'user',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        usersDb.push(newUser);
+        localStorage.setItem('hippo_users_db', JSON.stringify(usersDb));
+
+        currentUser = newUser;
+        localStorage.setItem('hippo_current_user', JSON.stringify(currentUser));
+
+        notice.classList.remove('hidden');
+        setTimeout(() => {
+          closeModal('authModal');
+          notice.classList.add('hidden');
+          renderNavbar();
+        }, 2500);
+
+      } else {
+        if (email === 'Eadams' && password === 'Floof2020') {
+          currentUser = { id: 'u_admin', email: 'Eadams', role: 'admin' };
+          localStorage.setItem('hippo_current_user', JSON.stringify(currentUser));
+          closeModal('authModal');
+          renderNavbar();
+          return;
+        }
+
+        const user = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+        if (!user) {
+          authError.innerText = 'Invalid email or password.';
+          authError.classList.remove('hidden');
+          return;
+        }
+
+        currentUser = user;
+        localStorage.setItem('hippo_current_user', JSON.stringify(currentUser));
+        closeModal('authModal');
+        renderNavbar();
+      }
+    }
+
+    function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const user = document.getElementById('adminUser').value.trim();
+      const pass = document.getElementById('adminPass').value.trim();
+      const err = document.getElementById('adminLoginError');
+
+      if (user === 'Eadams' && pass === 'Floof2020') {
+        currentUser = { id: 'u_admin', email: 'Eadams', role: 'admin' };
+        localStorage.setItem('hippo_current_user', JSON.stringify(currentUser));
+        closeModal('adminLoginModal');
+        renderNavbar();
+        renderCatalog();
+      } else {
+        err.innerText = 'Invalid Admin credentials!';
+        err.classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('hippo_current_user');
+      renderNavbar();
+      renderCatalog();
+    }
+
+    // --- FORGOT PASSWORD RECOVERY ---
+    function switchToForgot() {
+      closeModal('authModal');
+      openModal('forgotModal');
+    }
+
+    function handleSendResetCode(e) {
+      e.preventDefault();
+      currentForgotEmail = document.getElementById('forgotEmail').value.trim();
+      generatedResetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      document.getElementById('inboxTo').innerText = `To: ${currentForgotEmail}`;
+      document.getElementById('simulatedCode').innerText = generatedResetCode;
+
+      document.getElementById('forgotStep1').classList.add('hidden');
+      document.getElementById('forgotStep2').classList.remove('hidden');
+    }
+
+    function handleVerifyCodeAndReset(e) {
+      e.preventDefault();
+      const code = document.getElementById('inputResetCode').value.trim();
+      const newPass = document.getElementById('inputNewPassword').value.trim();
+      const err = document.getElementById('forgotError');
+      const notice = document.getElementById('forgotNotice');
+
+      if (code !== generatedResetCode) {
+        err.innerText = 'Invalid verification code.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      const userIndex = usersDb.findIndex(u => u.email.toLowerCase() === currentForgotEmail.toLowerCase());
+      if (userIndex !== -1) {
+        usersDb[userIndex].password = newPass;
+        localStorage.setItem('hippo_users_db', JSON.stringify(usersDb));
+      }
+
+      notice.innerText = 'Password reset successful! Redirecting to Sign In...';
+      notice.classList.remove('hidden');
+      err.classList.add('hidden');
+
+      setTimeout(() => {
+        closeModal('forgotModal');
+        openModal('authModal');
+      }, 2000);
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById('adminUsersTableBody');
+      tbody.innerHTML = usersDb.map(u => `
+        <tr class="hover:bg-purple-900/30">
+          <td class="p-3 text-purple-300">${u.id}</td>
+          <td class="p-3 text-white font-bold">${u.email}</td>
+          <td class="p-3 text-emerald-400">${u.password}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${u.role === 'admin' ? 'bg-red-900 text-red-200 border border-red-500/50' : 'bg-purple-950 text-purple-200 border border-purple-700/50'}">${u.role || 'user'}</span></td>
+          <td class="p-3 text-gray-400">${u.createdAt || 'N/A'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // --- UPLOAD FILM / TRAILER ---
+    async function handleAddVideoSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('videoTitle').value.trim();
+      const category = document.getElementById('videoCategory').value;
+      const desc = document.getElementById('videoDesc').value.trim();
+      const videoFileInput = document.getElementById('videoFileInput');
+      const thumbFileInput = document.getElementById('thumbFileInput');
+      const videoUrlInput = document.getElementById('videoUrlInput').value.trim();
+      const thumbUrlInput = document.getElementById('thumbUrlInput').value.trim();
+      const saveBtn = document.getElementById('saveVideoBtn');
+
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Media...';
+
+      const timestamp = Date.now();
+      let videoUrl = videoUrlInput;
+      let videoBlobKey = null;
+
+      if (videoFileInput.files.length > 0) {
+        const file = videoFileInput.files[0];
+        videoBlobKey = `video_${timestamp}`;
+        await saveMediaBlob(videoBlobKey, file);
+        videoUrl = URL.createObjectURL(file);
+      }
+
+      let thumbnail = thumbUrlInput;
+      let thumbBlobKey = null;
+
+      if (thumbFileInput.files.length > 0) {
+        const file = thumbFileInput.files[0];
+        thumbBlobKey = `thumb_${timestamp}`;
+        await saveMediaBlob(thumbBlobKey, file);
+        thumbnail = URL.createObjectURL(file);
+      }
+
+      const newMovie = {
+        id: 'm_' + timestamp,
+        title,
+        category,
+        description: desc || 'Custom video uploaded by Admin.',
+        videoUrl: videoUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        thumbnail: thumbnail || createSvgThumbnail(title),
+        videoBlobKey,
+        thumbBlobKey,
+        match: '99% Match'
+      };
+
+      movies.unshift(newMovie);
+      saveMoviesToStorage();
+
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save & Store Video';
+
+      closeModal('adminAddVideoModal');
+      renderCatalog();
+    }
+
+    function deleteMovie(id) {
+      movies = movies.filter(m => m.id !== id);
+      saveMoviesToStorage();
+      renderCatalog();
+    }
+
+    // --- PLAYER OVERLAY ---
+    async function playMovie(id) {
+      // Guard: Require user to be signed in to play videos
+      if (!currentUser) {
+        const authError = document.getElementById('authError');
+        authError.innerText = 'Please sign in or create a free account to watch videos.';
+        authError.classList.remove('hidden');
+        openModal('authModal');
+        return;
+      }
+
+      const movie = movies.find(m => m.id === id);
+      if (!movie) return;
+
+      const player = document.getElementById('mainVideoPlayer');
+      document.getElementById('playerMovieTitle').innerText = movie.title;
+      document.getElementById('playerMovieCategory').innerText = movie.category || 'Movie';
+      document.getElementById('playerMovieDesc').innerText = movie.description;
+
+      let src = movie.videoUrl;
+
+      if (movie.videoBlobKey) {
+        const blob = await getMediaBlob(movie.videoBlobKey);
+        if (blob) {
+          src = URL.createObjectURL(blob);
+          movie.videoUrl = src;
+        }
+      }
+
+      player.src = src;
+      openModal('playerModal');
+      
+      try {
+        await player.play();
+      } catch (err) {
+        console.log('Autoplay deferred for user interaction:', err);
+      }
+    }
+
+    function toggleMyList(id) {
+      const movie = movies.find(m => m.id === id);
+      if (!movie) return;
+      const idx = myList.findIndex(m => m.id === id);
+      if (idx > -1) {
+        myList.splice(idx, 1);
+      } else {
+        myList.push(movie);
+      }
+      document.getElementById('myListCount').innerText = myList.length;
+    }
+  </script>
+</body>
+</html>
