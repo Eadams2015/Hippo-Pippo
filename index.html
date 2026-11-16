@@ -219,9 +219,12 @@
   <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-3xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
       <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
-        <i data-lucide="database" class="text-purple-400"></i> Platform Database & IP Security
-      </h3>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="database" class="text-purple-400"></i> Platform Database & IP Security
+        </h3>
+        <button onclick="clearBanList()" class="text-[10px] text-red-400 hover:underline bg-red-950/60 border border-red-800/40 px-2 py-1 rounded-lg">Unban All IPs</button>
+      </div>
       <p class="text-xs text-purple-300 mb-4">Clicking <b>Kick & Ban IP</b> permanently blocks the user's account & IP address.</p>
       
       <div class="overflow-y-auto flex-grow pr-1 space-y-3" id="usersListContainer"></div>
@@ -317,6 +320,14 @@
   </footer>
 
   <script>
+    // URL Emergency Reset Guard (?reset=true)
+    if (window.location.search.includes('reset=true')) {
+      localStorage.removeItem('hippo_banned_list');
+      localStorage.removeItem('hippo_user');
+      alert('Security Ban List cleared! You can now log back in.');
+      window.location.href = window.location.pathname;
+    }
+
     /* PWA Manifest & Service Worker */
     const pwaManifest = {
       name: "Hippo-Pippo (13)",
@@ -363,8 +374,8 @@
     }
     function dismissPwaBanner() { document.getElementById('pwaInstallBanner').classList.add('hidden'); }
 
-    /* Client IP Retrieval */
-    let currentClientIP = '127.0.0.1';
+    /* Client IP Retrieval (Safe Default) */
+    let currentClientIP = null;
     fetch('https://api.ipify.org?format=json')
       .then(r => r.json())
       .then(d => { if(d.ip) currentClientIP = d.ip; })
@@ -406,8 +417,8 @@
     ];
     let savedAdmins = JSON.parse(localStorage.getItem('hippo_admins')) || defaultAdmins;
     let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || [
-      { username: 'Daniel', role: 'admin', ip: '127.0.0.1' },
-      { username: 'Eadams', role: 'admin', ip: '127.0.0.1' }
+      { username: 'Daniel', role: 'admin', ip: 'Admin-System-ID' },
+      { username: 'Eadams', role: 'admin', ip: 'Admin-System-ID' }
     ];
     let bannedList = JSON.parse(localStorage.getItem('hippo_banned_list')) || [];
 
@@ -425,8 +436,14 @@
     };
 
     function checkBanStatus() {
-      if (bannedList.some(b => b.ip === currentClientIP || (state.currentUser && b.username.toLowerCase() === state.currentUser.username.toLowerCase()))) {
-        alert('ACCESS DENIED: Your IP address or username has been permanently banned.');
+      if (!state.currentUser) return false;
+      const uName = state.currentUser.username.toLowerCase();
+      const isBanned = bannedList.some(b => 
+        b.username.toLowerCase() === uName || (currentClientIP && b.ip && b.ip === currentClientIP && b.ip !== 'Admin-System-ID')
+      );
+      
+      if (isBanned) {
+        alert('ACCESS DENIED: Your account or IP address is banned from Hippo-Pippo.');
         handleLogout();
         return true;
       }
@@ -604,7 +621,7 @@
                 ${usr.role.toUpperCase()}
               </span>
             </div>
-            <div class="font-mono text-[10px] text-gray-400">${usr.ip || '127.0.0.1'}</div>
+            <div class="font-mono text-[10px] text-gray-400">${usr.ip || 'Dynamic IP'}</div>
             <div class="text-right">
               <button onclick="kickUser(${idx})" class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow accent-glow-red">Kick & Ban IP</button>
             </div>
@@ -621,7 +638,9 @@
       const target = registeredUsers[idx];
       if (!target) return;
 
-      bannedList.push({ username: target.username.toLowerCase(), ip: target.ip || '127.0.0.1' });
+      const targetIp = target.ip && target.ip !== 'Admin-System-ID' ? target.ip : currentClientIP;
+      
+      bannedList.push({ username: target.username.toLowerCase(), ip: targetIp });
       localStorage.setItem('hippo_banned_list', JSON.stringify(bannedList));
 
       registeredUsers.splice(idx, 1);
@@ -630,17 +649,22 @@
       savedAdmins = savedAdmins.filter(a => a.username.toLowerCase() !== target.username.toLowerCase());
       localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
 
-      alert(`User "${target.username}" and IP "${target.ip || '127.0.0.1'}" have been permanently kicked and blocked.`);
+      alert(`User "${target.username}" has been kicked and banned.`);
       openUsersDbModal();
+    }
+
+    function clearBanList() {
+      bannedList = [];
+      localStorage.removeItem('hippo_banned_list');
+      alert('All banned users and IP restrictions cleared!');
     }
 
     function handleAuthSubmit(e) {
       e.preventDefault();
       const u = document.getElementById('authUsername').value.trim();
-      const p = document.getElementById('authPassword').value.trim();
 
-      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase() || b.ip === currentClientIP)) {
-        alert('Access Denied: Your account or IP address is banned from accessing Hippo-Pippo.');
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase())) {
+        alert('Access Denied: Your username has been banned.');
         return;
       }
 
@@ -659,11 +683,11 @@
           return;
         }
 
-        registeredUsers.push({ username: u, fullName, dob, email, role: 'user', ip: currentClientIP });
+        registeredUsers.push({ username: u, fullName, dob, email, role: 'user', ip: currentClientIP || 'Dynamic IP' });
         localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
       }
 
-      state.currentUser = { username: u, role: 'user', ip: currentClientIP };
+      state.currentUser = { username: u, role: 'user', ip: currentClientIP || 'Dynamic IP' };
       state.isAdmin = false;
       localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
       closeModal('authModal');
@@ -675,7 +699,7 @@
       const u = document.getElementById('adminUsername').value.trim();
       const p = document.getElementById('adminPassword').value.trim();
 
-      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase() || b.ip === currentClientIP)) {
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase())) {
         alert('Access Denied: Banned credentials.');
         return;
       }
@@ -683,7 +707,7 @@
       const matched = savedAdmins.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
 
       if (matched) {
-        state.currentUser = { username: matched.username, role: 'admin', ip: currentClientIP };
+        state.currentUser = { username: matched.username, role: 'admin', ip: currentClientIP || 'Admin-System-ID' };
         state.isAdmin = true;
         localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
         closeModal('adminModal');
@@ -709,7 +733,7 @@
       localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
 
       if (!registeredUsers.some(r => r.username.toLowerCase() === u.toLowerCase())) {
-        registeredUsers.push({ username: u, role: 'admin', ip: currentClientIP });
+        registeredUsers.push({ username: u, role: 'admin', ip: currentClientIP || 'Admin-System-ID' });
       } else {
         const existing = registeredUsers.find(r => r.username.toLowerCase() === u.toLowerCase());
         if (existing) existing.role = 'admin';
