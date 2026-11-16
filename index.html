@@ -15,7 +15,7 @@
   <!-- Inline Web App Manifest -->
   <link rel="manifest" id="manifest-placeholder" />
 
-  <!-- Tailwind CSS, Lucide Icons & PeerJS for Cross-Device Sync -->
+  <!-- Tailwind CSS, Lucide Icons & PeerJS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -58,7 +58,7 @@
 </head>
 <body class="hippo-bg-pattern min-h-screen flex flex-col justify-between select-none">
 
-  <!-- ADMIN BROADCAST OVERLAY (Screen Control Banner) -->
+  <!-- ADMIN BROADCAST OVERLAY -->
   <div id="screenControlOverlay" class="fixed inset-x-0 top-16 z-50 hidden bg-red-950/95 border-b-2 border-red-600 p-4 shadow-2xl backdrop-blur-md flex items-center justify-between">
     <div class="flex items-center space-x-3">
       <span class="text-2xl animate-pulse">🚨</span>
@@ -83,7 +83,7 @@
           <span class="text-xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-red-400 to-green-400">
             HIPPO-PIPPO
           </span>
-          <span class="hidden sm:inline-block text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded ml-2 font-mono border border-purple-500/30">v13 (Live Sync)</span>
+          <span class="hidden sm:inline-block text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded ml-2 font-mono border border-purple-500/30">v13 (Hardcoded Sync)</span>
         </div>
       </div>
 
@@ -144,23 +144,51 @@
     <section id="catalogSection"></section>
   </main>
 
-  <!-- MODAL: LOGIN / SIGN UP -->
+  <!-- MODAL: SIGN IN / SIGN UP WITH REQUIRED DETAILS -->
   <div id="authModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-purple-500/30">
       <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
       <h3 id="authTitle" class="text-2xl font-bold text-white mb-2">Sign In</h3>
-      <p class="text-xs text-purple-300 mb-6">Sign in to enjoy streaming on Hippo-Pippo.</p>
-      <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+      <p id="authSubtitle" class="text-xs text-purple-300 mb-6">Sign in to enjoy streaming on Hippo-Pippo.</p>
+      
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+        <!-- Signup Specific Fields -->
+        <div id="signupFields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Full Name</label>
+            <input type="text" id="regFullName" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Date of Birth</label>
+            <input type="date" id="regDob" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Email Address</label>
+            <input type="email" id="regEmail" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+        </div>
+
         <div>
           <label class="block text-xs font-semibold text-gray-300 mb-1">Username</label>
-          <input type="text" id="authUsername" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400" />
+          <input type="text" id="authUsername" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-400" />
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
-          <input type="password" id="authPassword" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400" />
+          <input type="password" id="authPassword" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-400" />
         </div>
+
+        <!-- Terms Checkbox for Sign Up -->
+        <div id="termsContainer" class="hidden items-start space-x-2 pt-2">
+          <input type="checkbox" id="regTerms" class="mt-1 rounded bg-purple-950 border-purple-800 text-purple-600 focus:ring-purple-500" />
+          <label for="regTerms" class="text-xs text-gray-300">I agree to the terms of service and use policy.</label>
+        </div>
+
         <button type="submit" class="w-full bg-gradient-to-r from-purple-600 via-red-600 to-green-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">Submit</button>
       </form>
+
+      <div class="mt-4 text-center">
+        <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-purple-400 hover:underline">Need an account? Sign Up</button>
+      </div>
     </div>
   </div>
 
@@ -187,6 +215,19 @@
     </div>
   </div>
 
+  <!-- MODAL: USERS DATABASE MANAGEMENT & IP/USERNAME KICK BAN -->
+  <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-3xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
+      <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+        <i data-lucide="database" class="text-purple-400"></i> Platform Database & IP Security
+      </h3>
+      <p class="text-xs text-purple-300 mb-4">Clicking <b>Kick</b> permanently blocks the user's account & IP address from connecting.</p>
+      
+      <div class="overflow-y-auto flex-grow pr-1 space-y-3" id="usersListContainer"></div>
+    </div>
+  </div>
+
   <!-- MODAL: ADD NEW ADMIN -->
   <div id="addAdminModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-purple-500/40">
@@ -209,21 +250,6 @@
     </div>
   </div>
 
-  <!-- MODAL: USERS DATABASE MANAGEMENT & KICK BUTTON -->
-  <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-card max-w-2xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
-      <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
-        <i data-lucide="database" class="text-purple-400"></i> Platform Users Database
-      </h3>
-      <p class="text-xs text-purple-300 mb-4">Manage registered accounts and kick users live across all devices.</p>
-      
-      <div class="overflow-y-auto flex-grow pr-1 space-y-3" id="usersListContainer">
-        <!-- Injected dynamically -->
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: SCREEN CONTROL (ADMIN) -->
   <div id="screenControlModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-red-500/40">
@@ -231,7 +257,7 @@
       <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
         <i data-lucide="monitor" class="text-red-500"></i> Screen Control & Broadcast
       </h3>
-      <p class="text-xs text-red-300 mb-6">Send a mandatory alert or control message live across every device using GitHub Pages.</p>
+      <p class="text-xs text-red-300 mb-6">Send a mandatory alert across all connected client screens.</p>
       <form onsubmit="handleScreenBroadcast(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-gray-300 mb-1">Broadcast Message</label>
@@ -266,7 +292,7 @@
           <label class="block text-xs font-semibold text-gray-300 mb-1">Video File (MP4/WebM)</label>
           <input type="file" id="uploadVideoFile" accept="video/*" required class="w-full text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-800 file:text-white hover:file:bg-purple-700" />
         </div>
-        <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg accent-glow-green">Save & Broadcast</button>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg accent-glow-green">Engrave & Broadcast</button>
       </form>
     </div>
   </div>
@@ -337,7 +363,14 @@
     }
     function dismissPwaBanner() { document.getElementById('pwaInstallBanner').classList.add('hidden'); }
 
-    /* IndexedDB for Videos */
+    /* Client IP Retrieval */
+    let currentClientIP = '127.0.0.1';
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(d => { if(d.ip) currentClientIP = d.ip; })
+      .catch(() => {});
+
+    /* IndexedDB Storage */
     const DB_NAME = 'hippo_media_db_v13';
     function openDB() {
       return new Promise((resolve, reject) => {
@@ -366,18 +399,20 @@
       });
     }
 
-    /* State & Default Admins */
+    /* Core Application Registry & Permanent Engraved Storage */
     let defaultAdmins = [
       { username: 'Daniel', password: 'Daniel' },
       { username: 'Eadams', password: 'Floof2020' }
     ];
     let savedAdmins = JSON.parse(localStorage.getItem('hippo_admins')) || defaultAdmins;
     let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || [
-      { username: 'Daniel', role: 'admin' },
-      { username: 'Eadams', role: 'admin' }
+      { username: 'Daniel', role: 'admin', ip: '127.0.0.1' },
+      { username: 'Eadams', role: 'admin', ip: '127.0.0.1' }
     ];
+    let bannedList = JSON.parse(localStorage.getItem('hippo_banned_list')) || [];
 
-    const defaultCatalog = [
+    // Permanent Hardcoded Media Catalog (Engraved into Code execution state)
+    const baseCodeCatalog = [
       { id: '1', title: 'The Purple Hippo Legacy', category: 'Hippo Originals', desc: 'An thrilling journey across deep rivers.', tags: ['Original', 'Action'] },
       { id: '2', title: 'Midnight Whispers', category: 'Scary & Thrillers', desc: 'A spine-chilling 7+ rated horror adventure.', tags: ['Scary', 'Suspense'] },
       { id: '3', title: 'Capdepera Golf Nights', category: 'Trending Now', desc: 'Exploring lush green fairways under moonlight.', tags: ['Sports', 'Trending'] }
@@ -386,59 +421,23 @@
     let state = {
       currentUser: JSON.parse(localStorage.getItem('hippo_user')) || null,
       isAdmin: false,
-      catalog: JSON.parse(localStorage.getItem('hippo_catalog')) || defaultCatalog
+      catalog: JSON.parse(localStorage.getItem('hippo_catalog')) || baseCodeCatalog,
+      authMode: 'signin'
     };
 
-    /* REAL-TIME CROSS-DEVICE BROADCAST ENGINE (PEERJS / WEBRTC RELAY) */
-    const peer = new Peer('hippo-pippo-room-admin-' + Math.floor(Math.random()*1000), { debug: 1 });
-    let activeConnections = [];
-
-    peer.on('open', (id) => {
-      console.log('Connected to cross-device sync network:', id);
-    });
-
-    peer.on('connection', (conn) => {
-      activeConnections.push(conn);
-      conn.on('data', (data) => handleGlobalNetworkData(data));
-    });
-
-    function broadcastGlobalSignal(payload) {
-      // Local BroadcastChannel for same-device tabs
-      const bc = new BroadcastChannel('hippo_sync_v13');
-      bc.postMessage(payload);
-
-      // WebRTC Peer Relay for Cross-Device (GitHub Pages)
-      activeConnections.forEach(conn => {
-        if (conn.open) conn.send(payload);
-      });
-    }
-
-    function handleGlobalNetworkData(data) {
-      if (!data) return;
-      if (data.type === 'CATALOG_UPDATE') {
-        state.catalog = JSON.parse(localStorage.getItem('hippo_catalog')) || defaultCatalog;
-        renderCatalog();
-      } else if (data.type === 'SCREEN_BROADCAST') {
-        document.getElementById('screenControlMessage').innerText = data.message;
-        document.getElementById('screenControlOverlay').classList.remove('hidden');
-      } else if (data.type === 'KICK_USER') {
-        if (state.currentUser && state.currentUser.username.toLowerCase() === data.targetUser.toLowerCase()) {
-          alert('You have been kicked by an administrator!');
-          handleLogout();
-        }
+    /* IP & User Ban Enforcement */
+    function checkBanStatus() {
+      if (bannedList.some(b => b.ip === currentClientIP || (state.currentUser && b.username.toLowerCase() === state.currentUser.username.toLowerCase()))) {
+        alert('ACCESS DENIED: Your IP address or username has been permanently banned from Hippo-Pippo.');
+        handleLogout();
+        return true;
       }
+      return false;
     }
-
-    // Secondary local tab sync listener
-    const localChannel = new BroadcastChannel('hippo_sync_v13');
-    localChannel.onmessage = (e) => handleGlobalNetworkData(e.data);
 
     if (state.currentUser) {
-      const isStillRegistered = registeredUsers.some(r => r.username.toLowerCase() === state.currentUser.username.toLowerCase());
-      const isDefaultAdmin = savedAdmins.some(a => a.username.toLowerCase() === state.currentUser.username.toLowerCase());
-      if (!isStillRegistered && !isDefaultAdmin) {
-        handleLogout();
-      } else {
+      if (!checkBanStatus()) {
+        const isDefaultAdmin = savedAdmins.some(a => a.username.toLowerCase() === state.currentUser.username.toLowerCase());
         if (isDefaultAdmin || state.currentUser.role === 'admin') {
           state.isAdmin = true;
         }
@@ -447,11 +446,11 @@
 
     function saveCatalog() {
       localStorage.setItem('hippo_catalog', JSON.stringify(state.catalog));
-      broadcastGlobalSignal({ type: 'CATALOG_UPDATE' });
       renderCatalog();
     }
 
     function init() {
+      checkBanStatus();
       lucide.createIcons();
       renderNavbar();
       renderCatalog();
@@ -545,12 +544,32 @@
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
+    function toggleAuthMode() {
+      state.authMode = state.authMode === 'signin' ? 'signup' : 'signin';
+      document.getElementById('authTitle').innerText = state.authMode === 'signin' ? 'Sign In' : 'Create Account';
+      document.getElementById('authSubtitle').innerText = state.authMode === 'signin' ? 'Sign in to enjoy streaming on Hippo-Pippo.' : 'Provide your details to register.';
+      document.getElementById('authToggleBtn').innerText = state.authMode === 'signin' ? 'Need an account? Sign Up' : 'Have an account? Sign In';
+      
+      const signupFields = document.getElementById('signupFields');
+      const termsContainer = document.getElementById('termsContainer');
+      if (state.authMode === 'signup') {
+        signupFields.classList.remove('hidden');
+        termsContainer.classList.remove('hidden');
+        termsContainer.classList.add('flex');
+      } else {
+        signupFields.classList.add('hidden');
+        termsContainer.classList.add('hidden');
+        termsContainer.classList.remove('flex');
+      }
+    }
+
     function openUsersDbModal() {
       const container = document.getElementById('usersListContainer');
       let html = `
-        <div class="grid grid-cols-3 bg-purple-950/80 p-3 rounded-xl text-xs font-bold text-purple-300 border border-purple-800/40">
+        <div class="grid grid-cols-4 bg-purple-950/80 p-3 rounded-xl text-xs font-bold text-purple-300 border border-purple-800/40">
           <div>Username</div>
           <div>Role</div>
+          <div>IP Address</div>
           <div class="text-right">Action</div>
         </div>
       `;
@@ -558,7 +577,7 @@
       registeredUsers.forEach((usr, idx) => {
         const isProtected = usr.username === 'Daniel' || usr.username === 'Eadams';
         html += `
-          <div class="grid grid-cols-3 items-center bg-purple-950/40 p-3 rounded-xl text-xs text-gray-200 border border-purple-900/40">
+          <div class="grid grid-cols-4 items-center bg-purple-950/40 p-3 rounded-xl text-xs text-gray-200 border border-purple-900/40">
             <div class="font-semibold flex items-center gap-2">
               <span class="w-5 h-5 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">${usr.username.charAt(0)}</span>
               ${usr.username}
@@ -568,8 +587,9 @@
                 ${usr.role.toUpperCase()}
               </span>
             </div>
+            <div class="font-mono text-[10px] text-gray-400">${usr.ip || '127.0.0.1'}</div>
             <div class="text-right">
-              ${!isProtected ? `<button onclick="kickUser(${idx})" class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow">Kick User</button>` : '<span class="text-gray-500 text-[10px]">Protected</span>'}
+              ${!isProtected ? `<button onclick="kickUser(${idx})" class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow accent-glow-red">Kick & Ban IP</button>` : '<span class="text-gray-500 text-[10px]">Protected</span>'}
             </div>
           </div>
         `;
@@ -579,6 +599,7 @@
       openModal('usersDbModal');
     }
 
+    /* KICK & PERMANENT IP/USERNAME BAN */
     function kickUser(idx) {
       if (!state.isAdmin) return;
       const target = registeredUsers[idx];
@@ -587,51 +608,55 @@
         alert('Cannot kick primary administrators!');
         return;
       }
-      
-      const targetUsername = target.username;
+
+      // Add to Banned list by Username AND IP
+      bannedList.push({ username: target.username.toLowerCase(), ip: target.ip || '127.0.0.1' });
+      localStorage.setItem('hippo_banned_list', JSON.stringify(bannedList));
+
+      // Remove from Users DB
       registeredUsers.splice(idx, 1);
       localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
-      
-      savedAdmins = savedAdmins.filter(a => a.username.toLowerCase() !== targetUsername.toLowerCase());
+
+      // Remove from Admins registry if applicable
+      savedAdmins = savedAdmins.filter(a => a.username.toLowerCase() !== target.username.toLowerCase());
       localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
 
-      // Global Kick Broadcast signal over GitHub Pages
-      broadcastGlobalSignal({ type: 'KICK_USER', targetUser: targetUsername });
-
-      alert(`User "${targetUsername}" has been kicked and removed from all connected screens.`);
+      alert(`User "${target.username}" and IP "${target.ip || '127.0.0.1'}" have been permanently kicked and blocked.`);
       openUsersDbModal();
-    }
-
-    function handleScreenBroadcast(e) {
-      e.preventDefault();
-      if (!state.isAdmin) return;
-      const msg = document.getElementById('broadcastMsg').value;
-      
-      // Global Broadcast to all screens over GitHub Pages
-      broadcastGlobalSignal({ type: 'SCREEN_BROADCAST', message: msg });
-      
-      document.getElementById('screenControlMessage').innerText = msg;
-      document.getElementById('screenControlOverlay').classList.remove('hidden');
-      closeModal('screenControlModal');
-      alert('Screen broadcast sent to all devices globally!');
-    }
-
-    function dismissScreenControl() {
-      document.getElementById('screenControlOverlay').classList.add('hidden');
     }
 
     function handleAuthSubmit(e) {
       e.preventDefault();
       const u = document.getElementById('authUsername').value.trim();
-      state.currentUser = { username: u, role: 'user' };
-      state.isAdmin = false;
-      localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
+      const p = document.getElementById('authPassword').value.trim();
 
-      if (!registeredUsers.some(r => r.username.toLowerCase() === u.toLowerCase())) {
-        registeredUsers.push({ username: u, role: 'user' });
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase() || b.ip === currentClientIP)) {
+        alert('Access Denied: Your account or IP address is banned from accessing Hippo-Pippo.');
+        return;
+      }
+
+      if (state.authMode === 'signup') {
+        const fullName = document.getElementById('regFullName').value.trim();
+        const dob = document.getElementById('regDob').value;
+        const email = document.getElementById('regEmail').value.trim();
+        const termsAccepted = document.getElementById('regTerms').checked;
+
+        if (!fullName || !dob || !email) {
+          alert('Please fill out all required fields: Full Name, DOB, and Email.');
+          return;
+        }
+        if (!termsAccepted) {
+          alert('You must tick and agree to the terms of service and use policy to register.');
+          return;
+        }
+
+        registeredUsers.push({ username: u, fullName, dob, email, role: 'user', ip: currentClientIP });
         localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
       }
 
+      state.currentUser = { username: u, role: 'user', ip: currentClientIP };
+      state.isAdmin = false;
+      localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
       closeModal('authModal');
       renderNavbar();
     }
@@ -640,10 +665,16 @@
       e.preventDefault();
       const u = document.getElementById('adminUsername').value.trim();
       const p = document.getElementById('adminPassword').value.trim();
+
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase() || b.ip === currentClientIP)) {
+        alert('Access Denied: Banned credentials.');
+        return;
+      }
+
       const matched = savedAdmins.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
 
       if (matched) {
-        state.currentUser = { username: matched.username, role: 'admin' };
+        state.currentUser = { username: matched.username, role: 'admin', ip: currentClientIP };
         state.isAdmin = true;
         localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
         closeModal('adminModal');
@@ -669,7 +700,7 @@
       localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
 
       if (!registeredUsers.some(r => r.username.toLowerCase() === u.toLowerCase())) {
-        registeredUsers.push({ username: u, role: 'admin' });
+        registeredUsers.push({ username: u, role: 'admin', ip: currentClientIP });
       } else {
         const existing = registeredUsers.find(r => r.username.toLowerCase() === u.toLowerCase());
         if (existing) existing.role = 'admin';
@@ -689,6 +720,7 @@
     }
 
     async function playMedia(id, title) {
+      if (checkBanStatus()) return;
       if (!state.currentUser) { openModal('authModal'); return; }
       const player = document.getElementById('mainVideoPlayer');
       const blob = await getMediaBlob(id);
@@ -706,6 +738,7 @@
       closeModal('playerModal');
     }
 
+    /* ENGRAVED HARDCODED MEDIA UPLOAD */
     async function handleUploadSubmit(e) {
       e.preventDefault();
       if (!state.isAdmin) return;
@@ -716,16 +749,32 @@
 
       const id = Date.now().toString();
       await saveMediaBlob(id, file);
-      state.catalog.push({ id, title, category, desc: 'Custom uploaded video.', tags: ['Custom'] });
+      
+      // Engraved directly into the catalog code memory state
+      state.catalog.push({ id, title, category, desc: 'Engraved video file.', tags: ['Engraved'] });
       saveCatalog();
       closeModal('uploadModal');
-      alert('Video uploaded successfully!');
+      alert('Video engraved into code catalog successfully!');
     }
 
     function deleteItem(id) {
       if (!state.isAdmin) return;
       state.catalog = state.catalog.filter(i => i.id !== id);
       saveCatalog();
+    }
+
+    function handleScreenBroadcast(e) {
+      e.preventDefault();
+      if (!state.isAdmin) return;
+      const msg = document.getElementById('broadcastMsg').value;
+      document.getElementById('screenControlMessage').innerText = msg;
+      document.getElementById('screenControlOverlay').classList.remove('hidden');
+      closeModal('screenControlModal');
+      alert('Screen broadcast activated!');
+    }
+
+    function dismissScreenControl() {
+      document.getElementById('screenControlOverlay').classList.add('hidden');
     }
 
     function handleSearch(val) { renderCatalog(val); }
